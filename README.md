@@ -47,7 +47,7 @@ v = k.orbital_velocity(5.972e24, 6800000)
 print(f"轨道速度: {v}")
 
 # 查询版本更新信息 / Query version update information
-info = k.update_information("1.2.2")
+info = k.update_information("1.3.2")
 print(f"更新信息: {info}")
 
 # 霍曼转移轨道计算 / Hohmann transfer orbit calculation
@@ -60,6 +60,25 @@ print(f"转移时间: {time} 秒")
 
 ## 更新日志 / Changelog
 <details> <summary>点击查看完整的更新日志（Click to expand）</summary>
+
+### [1.3.2] - 2026-09-19
+#### 添加 / Added
+**中文：**
+- 新增 macOS x86_64 和 macOS arm64 平台的预编译包。
+- 新增 Linux aarch64 平台的预编译包。
+- 使用 GitHub Actions 自动编译多平台包。
+
+**English:**
+- Added prebuilt wheels for macOS x86_64 and macOS arm64.
+- Added prebuilt wheels for Linux aarch64.
+- Used GitHub Actions to automatically build multi-platform wheels.
+
+#### 修复 / Fixed
+**中文：**
+- 修正 `Homepage` 链接为项目仓库地址。
+
+**English:**
+- Fixed `Homepage` link to point to the project repository.
 
 ### [1.3.1] - 2026-09-12
 #### 改进 / Improved

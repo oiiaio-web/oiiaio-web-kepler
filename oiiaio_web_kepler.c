@@ -67,6 +67,9 @@ static PyObject* hohmann_transfer(PyObject* self, PyObject* args) {
 
 // 查询版本更新信息
 const char* get_update_info(const char* version) {
+    if (strcmp(version, "1.3.2") == 0) {
+        return "【中文】1.3.2 版本：新增 macOS x86_64、macOS arm64、Linux aarch64 平台的预编译包，修正 Homepage 链接。【English】Version 1.3.2: Added prebuilt wheels for macOS x86_64, macOS arm64, and Linux aarch64, fixed Homepage link.";
+    }
     if (strcmp(version, "1.3.1") == 0) {
         return "【中文】1.3.1 版本：添加 python_requires、classifiers、project_urls，优化 setup.py 支持 Linux 和 Windows 双平台编译。【English】Version 1.3.1: Added python_requires, classifiers, project_urls, and improved setup.py to support both Linux and Windows compilation.";
     }
