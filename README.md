@@ -36,6 +36,15 @@ pip install oiiaio-web-kepler
 **English:**
 After installation, import and use in Python:
 
+## 使用方法 / Usage
+
+**中文：**
+安装后，在 Python 中导入并使用：
+
+**English:**
+After installation, import and use in Python:
+
+```python
 import oiiaio_web_kepler as k
 
 # 计算引力 / Calculate gravity
@@ -46,32 +55,94 @@ print(f"引力: {force}")
 v = k.orbital_velocity(5.972e24, 6800000)
 print(f"轨道速度: {v}")
 
-# 查询版本更新信息 / Query version update information
-info = k.update_information("1.3.2")
-print(f"更新信息: {info}")
-
-# 霍曼转移轨道计算 / Hohmann transfer orbit calculation
+# 霍曼转移轨道计算 / Hohmann transfer orbit
 dv1, dv2, total_dv, time = k.hohmann_transfer(6371000, 42164000, 3.986e14)
 print(f"第一次点火速度增量: {dv1} m/s")
 print(f"第二次点火速度增量: {dv2} m/s")
 print(f"总速度增量: {total_dv} m/s")
 print(f"转移时间: {time} 秒")
+
+# 开普勒第三定律验证 / Kepler's third law
+result = k.kepler_third_law(1.0, 1.0, 4.0, 8.0)
+print(f"验证结果: {result}")
+
+# 轨道离心率 / Orbital eccentricity
+e = k.orbital_eccentricity(7800, 6800000, 3.986e14)
+print(f"离心率: {e}")
+
+# 最近/最远点距离 / Apsis distances
+r_p, r_a = k.apsis_distances(6800000, 0.01)
+print(f"近地点: {r_p}, 远地点: {r_a}")
+
+# 拉格朗日点 / Lagrange point
+x, y = k.lagrange_point(5.972e24, 7.342e22, 3.84e8, 4)
+print(f"L4 位置: ({x}, {y})")
+
+# 多体引力合力 / Multi-body gravity
+bodies = [(5.972e24, 0, 0), (7.342e22, 3.84e8, 0)]
+fx, fy = k.multi_body_gravity(bodies)
+print(f"合力: ({fx}, {fy})")
+
+# 查询版本更新信息 / Query version update information
+info = k.update_information("1.4.0")
+print(f"更新信息: {info}")
+```
 ---
 
 ## 更新日志 / Changelog
 <details> <summary>点击查看完整的更新日志（Click to expand）</summary>
 
-### [1.3.2] - 2026-09-19
+### [1.4.1] - 2026-10-04
 #### 添加 / Added
 **中文：**
-- 新增 macOS x86_64 和 macOS arm64 平台的预编译包。
-- 新增 Linux aarch64 平台的预编译包。
-- 使用 GitHub Actions 自动编译多平台包。
+- 新增 macOS Intel（x86_64）预编译包。
+- 新增 macOS Apple Silicon（arm64）预编译包。
+- 新增 Linux aarch64 预编译包。
+- 使用 GitHub Actions 自动编译全平台安装包。
 
 **English:**
-- Added prebuilt wheels for macOS x86_64 and macOS arm64.
-- Added prebuilt wheels for Linux aarch64.
-- Used GitHub Actions to automatically build multi-platform wheels.
+- Added prebuilt wheel for macOS Intel (x86_64).
+- Added prebuilt wheel for macOS Apple Silicon (arm64).
+- Added prebuilt wheel for Linux aarch64.
+- Automated cross-platform builds with GitHub Actions.
+
+### 🚀 [1.4.0] - 2026-09-25 · 史前大更新 · Prehistoric Mega Update
+
+> **中文：这是 `oiiaio-web-kepler` 诞生以来最大的一次更新。一夜之间，它从一个“只会算引力和轨道速度”的小库，进化成了一个拥有 8 大物理模块的“航天模拟器引擎”。**
+>
+> **English: This is the biggest update since `oiiaio-web-kepler` was born. Overnight, it evolved from a library that could only calculate gravity and orbital velocity, into a "spaceflight simulator engine" with 8 major physics modules.**
+
+#### 添加 / Added
+**中文：**
+- 新增 `kepler_third_law()` 函数，支持开普勒第三定律验证。
+- 新增 `orbital_eccentricity()` 函数，支持轨道离心率计算。
+- 新增 `apsis_distances()` 函数，支持最近/最远点距离计算。
+- 新增 `lagrange_point()` 函数，支持 L1~L5 拉格朗日点计算。
+- 新增 `multi_body_gravity()` 函数，支持多体引力合力计算。
+
+**English:**
+- Added `kepler_third_law()` function for Kepler's third law verification.
+- Added `orbital_eccentricity()` function for orbital eccentricity calculation.
+- Added `apsis_distances()` function for apsis distances calculation.
+- Added `lagrange_point()` function for L1~L5 Lagrange point calculation.
+- Added `multi_body_gravity()` function for multi-body gravity calculation.
+
+#### 模块总览 / Module Overview
+
+| 模块 | 功能 | 难度 |
+|------|------|------|
+| `compute_gravity` | 万有引力计算 | ⭐ |
+| `orbital_velocity` | 轨道速度计算 | ⭐ |
+| `hohmann_transfer` | 霍曼转移轨道 | ⭐⭐⭐ |
+| `kepler_third_law` | 开普勒第三定律验证 | ⭐⭐ |
+| `orbital_eccentricity` | 轨道离心率 | ⭐⭐⭐ |
+| `apsis_distances` | 近远点距离 | ⭐ |
+| `lagrange_point` | 拉格朗日点 L1~L5 | ⭐⭐⭐⭐⭐ |
+| `multi_body_gravity` | 多体引力合力 | ⭐⭐⭐⭐ |
+
+**从此，`oiiaio-web-kepler` 不再只是一个“计算器”，它是你的航天模拟器物理引擎。**
+
+**From now on, `oiiaio-web-kepler` is no longer just a "calculator" — it's your spaceflight simulator physics engine.**
 
 #### 修复 / Fixed
 **中文：**

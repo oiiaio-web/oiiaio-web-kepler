@@ -1,28 +1,23 @@
 ﻿import os
 import sys
-import sysconfig
 from setuptools import setup, Extension, find_packages
 
-# ========== 平台判断 ==========
 if sys.platform == 'win32':
-    extra_compile_args = ['/std:c17', '/utf-8']
+    extra_compile_args = ['/std:c11', '/utf-8']
 else:
     extra_compile_args = ['-std=c11', '-finput-charset=UTF-8', '-fexec-charset=UTF-8']
 
-# ========== 扩展模块 ==========
 module = Extension(
     'oiiaio_web_kepler',
     sources=['oiiaio_web_kepler.c'],
     libraries=[],
-    py_limited_api=True,
-    include_dirs=[sysconfig.get_path('include')],
+    py_limited_api='cp312',
     extra_compile_args=extra_compile_args
 )
 
-# ========== 打包配置 ==========
 setup(
     name='oiiaio-web-kepler',
-    version='1.3.2',
+    version='1.4.1',
     description='轨道计算器',
     long_description=open('README.md', encoding='utf-8-sig').read(),
     long_description_content_type='text/markdown',

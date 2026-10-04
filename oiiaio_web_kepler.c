@@ -5,10 +5,13 @@
 #include <Python.h>
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// ========== 原有功能 ==========
 
 // 计算两个物体之间的引力
 static PyObject* compute_gravity(PyObject* self, PyObject* args) {
@@ -65,8 +68,202 @@ static PyObject* hohmann_transfer(PyObject* self, PyObject* args) {
     return Py_BuildValue("(dddd)", delta_v1, delta_v2, total_delta_v, transfer_time);
 }
 
-// 查询版本更新信息
+// ========== 1.4.0 新增功能 ==========
+
+// 1. 开普勒第三定律验证（带误差显示）
+static PyObject* kepler_third_law(PyObject* self, PyObject* args) {
+    double a1, T1, a2, T2;
+    if (!PyArg_ParseTuple(args, "dddd", &a1, &T1, &a2, &T2)) return NULL;
+
+    if (a1 <= 0 || a2 <= 0 || T1 <= 0 || T2 <= 0) {
+        PyErr_SetString(PyExc_ValueError, "all parameters must be positive");
+        return NULL;
+    }
+
+    double left = (T1 * T1) / (T2 * T2);
+    double right = (a1 * a1 * a1) / (a2 * a2 * a2);
+    double diff = fabs(left - right);
+
+    if (diff < 1e-6) {
+        char result[256];
+        snprintf(result, sizeof(result),
+            "✅ 开普勒第三定律验证通过！误差: %.2e | ✅ Kepler's third law verified! Error: %.2e",
+            diff, diff);
+        return Py_BuildValue("s", result);
+    } else {
+        char result[256];
+        snprintf(result, sizeof(result),
+            "❌ 开普勒第三定律验证失败！误差: %.2e 过大 | ❌ Kepler's third law verification failed! Error: %.2e too large",
+            diff, diff);
+        return Py_BuildValue("s", result);
+    }
+}
+
+// 2. 轨道离心率
+static PyObject* orbital_eccentricity(PyObject* self, PyObject* args) {
+    double v, r, mu;
+    if (!PyArg_ParseTuple(args, "ddd", &v, &r, &mu)) return NULL;
+
+    if (r <= 0 || mu <= 0) {
+        PyErr_SetString(PyExc_ValueError, "r and mu must be positive");
+        return NULL;
+    }
+
+    double epsilon = (v * v) / 2.0 - mu / r;
+    double h = r * v;
+    double inner = 1.0 + (2.0 * epsilon * h * h) / (mu * mu);
+
+    if (inner < 0) {
+        PyErr_SetString(PyExc_ValueError, "Invalid orbit: negative under sqrt");
+        return NULL;
+    }
+
+    return Py_BuildValue("d", sqrt(inner));
+}
+
+// 3. 最近/最远点距离
+static PyObject* apsis_distances(PyObject* self, PyObject* args) {
+    double a, e;
+    if (!PyArg_ParseTuple(args, "dd", &a, &e)) return NULL;
+
+    if (a <= 0) {
+        PyErr_SetString(PyExc_ValueError, "a must be positive");
+        return NULL;
+    }
+
+    if (e >= 1.0) {
+        PyErr_SetString(PyExc_ValueError, "e >= 1: not a closed orbit");
+        return NULL;
+    }
+
+    double r_p = a * (1.0 - e);
+    double r_a = a * (1.0 + e);
+
+    return Py_BuildValue("(dd)", r_p, r_a);
+}
+
+// 4. 拉格朗日点（L1~L5）
+static PyObject* lagrange_point(PyObject* self, PyObject* args) {
+    double m1, m2, r;
+    int point;
+    if (!PyArg_ParseTuple(args, "dddi", &m1, &m2, &r, &point)) return NULL;
+
+    if (m1 <= 0 || m2 <= 0 || r <= 0) {
+        PyErr_SetString(PyExc_ValueError, "m1, m2, r must be positive");
+        return NULL;
+    }
+
+    if (point < 1 || point > 5) {
+        PyErr_SetString(PyExc_ValueError, "point must be 1, 2, 3, 4, or 5");
+        return NULL;
+    }
+
+    double mu = m2 / (m1 + m2);
+
+    // L4 和 L5：等边三角形顶点
+    if (point == 4 || point == 5) {
+        double x = r * (0.5 - mu);
+        double y = r * sqrt(3.0) / 2.0;
+        if (point == 5) y = -y;
+        return Py_BuildValue("(dd)", x, y);
+    }
+
+    // L1、L2、L3：牛顿迭代
+    double gamma = pow(mu / 3.0, 1.0 / 3.0);
+    double x = 0.0;
+
+    if (point == 1) {
+        x = r * (1.0 - gamma);
+    } else if (point == 2) {
+        x = r * (1.0 + gamma);
+    } else {
+        x = -r * (1.0 + 5.0 * mu / 12.0);
+    }
+
+    for (int i = 0; i < 50; i++) {
+        double f, df;
+        if (point == 1) {
+            double r1 = x;
+            double r2 = r - x;
+            f = m1 / (r1 * r1) - m2 / (r2 * r2) - x * (m1 + m2) / (r * r * r);
+            df = -2.0 * m1 / (r1 * r1 * r1) - 2.0 * m2 / (r2 * r2 * r2) - (m1 + m2) / (r * r * r);
+        } else if (point == 2) {
+            double r1 = x;
+            double r2 = x - r;
+            f = m1 / (r1 * r1) + m2 / (r2 * r2) - x * (m1 + m2) / (r * r * r);
+            df = -2.0 * m1 / (r1 * r1 * r1) - 2.0 * m2 / (r2 * r2 * r2) - (m1 + m2) / (r * r * r);
+        } else {
+            double r1 = -x;
+            double r2 = r - x;
+            f = -m1 / (r1 * r1) - m2 / (r2 * r2) - x * (m1 + m2) / (r * r * r);
+            df = -2.0 * m1 / (r1 * r1 * r1) - 2.0 * m2 / (r2 * r2 * r2) - (m1 + m2) / (r * r * r);
+        }
+
+        if (fabs(df) < 1e-12) break;
+        double dx = f / df;
+        x -= dx;
+        if (fabs(dx) < 1e-10) break;
+    }
+
+    return Py_BuildValue("(dd)", x, 0.0);
+}
+
+// 5. 多体引力合力
+static PyObject* multi_body_gravity(PyObject* self, PyObject* args) {
+    PyObject* bodies_list;
+    if (!PyArg_ParseTuple(args, "O", &bodies_list)) return NULL;
+
+    if (!PyList_Check(bodies_list)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a list of bodies");
+        return NULL;
+    }
+
+    Py_ssize_t n = PyList_Size(bodies_list);
+    if (n < 2) {
+        return Py_BuildValue("(dd)", 0.0, 0.0);
+    }
+
+    double G = 6.67430e-11;
+    double fx = 0.0, fy = 0.0;
+
+    for (Py_ssize_t i = 0; i < n; i++) {
+        for (Py_ssize_t j = i + 1; j < n; j++) {
+            PyObject* body_i = PyList_GetItem(bodies_list, i);
+            PyObject* body_j = PyList_GetItem(bodies_list, j);
+
+            double mi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 0));
+            double xi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 1));
+            double yi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 2));
+
+            double mj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 0));
+            double xj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 1));
+            double yj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 2));
+
+            double dx = xj - xi;
+            double dy = yj - yi;
+            double dist2 = dx * dx + dy * dy;
+            double dist = sqrt(dist2);
+
+            if (dist < 1e-6) continue;
+
+            double F = G * mi * mj / dist2;
+            fx += F * dx / dist;
+            fy += F * dy / dist;
+        }
+    }
+
+    return Py_BuildValue("(dd)", fx, fy);
+}
+
+// ========== 版本更新信息 ==========
+
 const char* get_update_info(const char* version) {
+    if (strcmp(version, "1.4.1") == 0) {
+        return "【中文】1.4.1 版本：新增 macOS Intel、macOS Apple Silicon、Linux aarch64 三个平台的预编译包，全平台制霸。【English】Version 1.4.1: Added prebuilt wheels for macOS Intel, macOS Apple Silicon, and Linux aarch64. Now available on all platforms.";
+    }
+    if (strcmp(version, "1.4.0") == 0) {
+        return "🚀 史前大更新 | 1.4.0 版本：一夜之间新增开普勒第三定律、轨道离心率、近远点距离、拉格朗日点、多体引力合力五大物理模块！从此升级为航天模拟器引擎！ | 🚀 Prehistoric Mega Update | Version 1.4.0: Added 5 physics modules overnight — Kepler's third law, orbital eccentricity, apsis distances, Lagrange points, and multi-body gravity! Now a spaceflight simulator engine!";
+    }
     if (strcmp(version, "1.3.2") == 0) {
         return "【中文】1.3.2 版本：新增 macOS x86_64、macOS arm64、Linux aarch64 平台的预编译包，修正 Homepage 链接。【English】Version 1.3.2: Added prebuilt wheels for macOS x86_64, macOS arm64, and Linux aarch64, fixed Homepage link.";
     }
@@ -155,17 +352,24 @@ static PyObject* update_information(PyObject* self, PyObject* args) {
     return Py_BuildValue("s", info);
 }
 
-// 方法表
+// ========== 方法表 ==========
+
 static PyMethodDef KeplerMethods[] = {
     {"update_information", update_information, METH_VARARGS, "查询版本更新信息"},
     {"compute_gravity", compute_gravity, METH_VARARGS, "计算引力"},
     {"orbital_velocity", orbital_velocity, METH_VARARGS, "计算轨道速度"},
     {"hohmann_transfer", hohmann_transfer, METH_VARARGS, "霍曼转移轨道计算"},
     {"hohmann", hohmann_transfer, METH_VARARGS, "霍曼转移轨道计算（别名）"},
+    {"kepler_third_law", kepler_third_law, METH_VARARGS, "开普勒第三定律验证"},
+    {"orbital_eccentricity", orbital_eccentricity, METH_VARARGS, "轨道离心率"},
+    {"apsis_distances", apsis_distances, METH_VARARGS, "最近/最远点距离"},
+    {"lagrange_point", lagrange_point, METH_VARARGS, "拉格朗日点计算（point=1~5）"},
+    {"multi_body_gravity", multi_body_gravity, METH_VARARGS, "多体引力合力计算"},
     {NULL, NULL, 0, NULL}
 };
 
-// 模块定义
+// ========== 模块定义 ==========
+
 static struct PyModuleDef kepler_module = {
     PyModuleDef_HEAD_INIT,
     "oiiaio_web_kepler",
@@ -174,7 +378,8 @@ static struct PyModuleDef kepler_module = {
     KeplerMethods
 };
 
-// 初始化
+// ========== 初始化 ==========
+
 PyMODINIT_FUNC PyInit_oiiaio_web_kepler(void) {
     return PyModule_Create(&kepler_module);
 }
