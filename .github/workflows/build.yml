@@ -1,4 +1,4 @@
-name: Build Wheels
+﻿name: Build Wheels
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21.3
         env:
-          CIBW_BUILD: cp38-*
+          CIBW_BUILD: cp38-* cp315-*
           CIBW_ARCHS_LINUX: x86_64 aarch64
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
@@ -38,7 +38,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21.3
         env:
-          CIBW_BUILD: cp38-*
+          CIBW_BUILD: cp38-* cp315-*
           CIBW_ARCHS_MACOS: x86_64 arm64
 
       - name: Upload macOS wheels
@@ -46,19 +46,3 @@ jobs:
         with:
           name: macos-wheels
           path: ./wheelhouse/*.whl
-
-  publish:
-    needs: [build_linux, build_macos]
-    runs-on: ubuntu-latest
-    if: false # 临时禁用发布：仅产出 wheel 文件；如需恢复发布，删除本行即可
-    steps:
-      - name: Download all wheels
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}

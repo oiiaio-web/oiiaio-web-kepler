@@ -38,11 +38,6 @@ After installation, import and use in Python:
 
 ## 使用方法 / Usage
 
-**中文：**
-安装后，在 Python 中导入并使用：
-
-**English:**
-After installation, import and use in Python:
 
 ```python
 import oiiaio_web_kepler as k
@@ -91,6 +86,14 @@ print(f"更新信息: {info}")
 
 ## 更新日志 / Changelog
 <details> <summary>点击查看完整的更新日志（Click to expand）</summary>
+
+### [1.4.2] - 2026-10-11
+#### 添加 / Added
+**中文：**
+- 新增 Python 3.15。
+
+**English:**
+- Added with Python 3.15.
 
 ### [1.4.1] - 2026-10-04
 #### 添加 / Added
