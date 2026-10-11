@@ -11,13 +11,13 @@ module = Extension(
     'oiiaio_web_kepler',
     sources=['oiiaio_web_kepler.c'],
     libraries=[],
-    py_limited_api='cp38',
+    py_limited_api=True,
     extra_compile_args=extra_compile_args
 )
 
 setup(
     name='oiiaio-web-kepler',
-    version='1.4.2',
+    version='1.5.0',
     description='轨道计算器 / 轨道力学计算器',
     long_description=open('README.md', encoding='utf-8-sig').read(),
     long_description_content_type='text/markdown',

@@ -42,6 +42,10 @@ After installation, import and use in Python:
 ```python
 import oiiaio_web_kepler as k
 
+# 查询星球信息 / Planet information
+print(k.planet_information("地球"))
+print(k.ptmation("Earth"))
+
 # 计算引力 / Calculate gravity
 force = k.compute_gravity(5.972e24, 1000, 6371000)
 print(f"引力: {force}")
@@ -86,6 +90,18 @@ print(f"更新信息: {info}")
 
 ## 更新日志 / Changelog
 <details> <summary>点击查看完整的更新日志（Click to expand）</summary>
+
+### [1.5.0] - 2026-10-11
+#### 添加 / Added
+**中文：**
+- 新增 `planet_information()` 函数，内置 10 个星球参数。
+- 新增 `ptmation()` 短名，功能相同。
+- 支持星球：水星、金星、地球、火星、木星、土星、天王星、海王星、月球、太阳。
+
+**English:**
+- Added `planet_information()` function with built-in data for 10 planets.
+- Added `ptmation()` alias.
+- Supported planets: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Moon, Sun.
 
 ### [1.4.2] - 2026-10-11
 #### 添加 / Added

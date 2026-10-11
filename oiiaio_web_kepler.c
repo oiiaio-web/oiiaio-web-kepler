@@ -1,4 +1,4 @@
-#ifdef _MSC_VER
+﻿#ifdef _MSC_VER
 #pragma execution_character_set("utf-8")
 #endif
 
@@ -13,48 +13,37 @@
 
 // ========== 原有功能 ==========
 
-// 计算两个物体之间的引力
 static PyObject* compute_gravity(PyObject* self, PyObject* args) {
     double m1, m2, distance;
     if (!PyArg_ParseTuple(args, "ddd", &m1, &m2, &distance)) return NULL;
-
     if (distance <= 0) {
         PyErr_SetString(PyExc_ValueError, "distance must be positive");
         return NULL;
     }
-
     double G = 6.67430e-11;
     double force = G * m1 * m2 / (distance * distance);
-    
     return Py_BuildValue("d", force);
 }
 
-// 计算轨道的“速度”
 static PyObject* orbital_velocity(PyObject* self, PyObject* args) {
     double mass, radius;
     if (!PyArg_ParseTuple(args, "dd", &mass, &radius)) return NULL;
-
     if (radius <= 0) {
         PyErr_SetString(PyExc_ValueError, "radius must be positive");
         return NULL;
     }
-
     double G = 6.67430e-11;
     double v = sqrt(G * mass / radius);
-    
     return Py_BuildValue("d", v);
 }
 
-// 霍曼转移轨道计算
 static PyObject* hohmann_transfer(PyObject* self, PyObject* args) {
     double r1, r2, mu;
     if (!PyArg_ParseTuple(args, "ddd", &r1, &r2, &mu)) return NULL;
-
     if (r1 <= 0 || r2 <= 0 || mu <= 0) {
         PyErr_SetString(PyExc_ValueError, "r1, r2, mu must be positive");
         return NULL;
     }
-
     double a_transfer = (r1 + r2) / 2.0;
     double v1 = sqrt(mu * (2.0 / r1 - 1.0 / a_transfer));
     double v2 = sqrt(mu * (2.0 / r2 - 1.0 / a_transfer));
@@ -64,26 +53,21 @@ static PyObject* hohmann_transfer(PyObject* self, PyObject* args) {
     double delta_v2 = v_circular2 - v2;
     double total_delta_v = fabs(delta_v1) + fabs(delta_v2);
     double transfer_time = M_PI * sqrt(a_transfer * a_transfer * a_transfer / mu);
-    
     return Py_BuildValue("(dddd)", delta_v1, delta_v2, total_delta_v, transfer_time);
 }
 
 // ========== 1.4.0 新增功能 ==========
 
-// 1. 开普勒第三定律验证（带误差显示）
 static PyObject* kepler_third_law(PyObject* self, PyObject* args) {
     double a1, T1, a2, T2;
     if (!PyArg_ParseTuple(args, "dddd", &a1, &T1, &a2, &T2)) return NULL;
-
     if (a1 <= 0 || a2 <= 0 || T1 <= 0 || T2 <= 0) {
         PyErr_SetString(PyExc_ValueError, "all parameters must be positive");
         return NULL;
     }
-
     double left = (T1 * T1) / (T2 * T2);
     double right = (a1 * a1 * a1) / (a2 * a2 * a2);
     double diff = fabs(left - right);
-
     if (diff < 1e-6) {
         char result[256];
         snprintf(result, sizeof(result),
@@ -99,79 +83,60 @@ static PyObject* kepler_third_law(PyObject* self, PyObject* args) {
     }
 }
 
-// 2. 轨道离心率
 static PyObject* orbital_eccentricity(PyObject* self, PyObject* args) {
     double v, r, mu;
     if (!PyArg_ParseTuple(args, "ddd", &v, &r, &mu)) return NULL;
-
     if (r <= 0 || mu <= 0) {
         PyErr_SetString(PyExc_ValueError, "r and mu must be positive");
         return NULL;
     }
-
     double epsilon = (v * v) / 2.0 - mu / r;
     double h = r * v;
     double inner = 1.0 + (2.0 * epsilon * h * h) / (mu * mu);
-
     if (inner < 0) {
         PyErr_SetString(PyExc_ValueError, "Invalid orbit: negative under sqrt");
         return NULL;
     }
-
     return Py_BuildValue("d", sqrt(inner));
 }
 
-// 3. 最近/最远点距离
 static PyObject* apsis_distances(PyObject* self, PyObject* args) {
     double a, e;
     if (!PyArg_ParseTuple(args, "dd", &a, &e)) return NULL;
-
     if (a <= 0) {
         PyErr_SetString(PyExc_ValueError, "a must be positive");
         return NULL;
     }
-
     if (e >= 1.0) {
         PyErr_SetString(PyExc_ValueError, "e >= 1: not a closed orbit");
         return NULL;
     }
-
     double r_p = a * (1.0 - e);
     double r_a = a * (1.0 + e);
-
     return Py_BuildValue("(dd)", r_p, r_a);
 }
 
-// 4. 拉格朗日点（L1~L5）
 static PyObject* lagrange_point(PyObject* self, PyObject* args) {
     double m1, m2, r;
     int point;
     if (!PyArg_ParseTuple(args, "dddi", &m1, &m2, &r, &point)) return NULL;
-
     if (m1 <= 0 || m2 <= 0 || r <= 0) {
         PyErr_SetString(PyExc_ValueError, "m1, m2, r must be positive");
         return NULL;
     }
-
     if (point < 1 || point > 5) {
         PyErr_SetString(PyExc_ValueError, "point must be 1, 2, 3, 4, or 5");
         return NULL;
     }
-
     double mu = m2 / (m1 + m2);
-
-    // L4 和 L5：等边三角形顶点
     if (point == 4 || point == 5) {
         double x = r * (0.5 - mu);
         double y = r * sqrt(3.0) / 2.0;
         if (point == 5) y = -y;
         return Py_BuildValue("(dd)", x, y);
     }
-
-    // L1、L2、L3：牛顿迭代
     double gamma = pow(mu / 3.0, 1.0 / 3.0);
     double x = 0.0;
-
     if (point == 1) {
         x = r * (1.0 - gamma);
     } else if (point == 2) {
@@ -179,7 +144,6 @@ static PyObject* lagrange_point(PyObject* self, PyObject* args) {
     } else {
         x = -r * (1.0 + 5.0 * mu / 12.0);
     }
-
     for (int i = 0; i < 50; i++) {
         double f, df;
         if (point == 1) {
@@ -198,68 +162,143 @@ static PyObject* lagrange_point(PyObject* self, PyObject* args) {
             f = -m1 / (r1 * r1) - m2 / (r2 * r2) - x * (m1 + m2) / (r * r * r);
             df = -2.0 * m1 / (r1 * r1 * r1) - 2.0 * m2 / (r2 * r2 * r2) - (m1 + m2) / (r * r * r);
         }
-
         if (fabs(df) < 1e-12) break;
         double dx = f / df;
         x -= dx;
         if (fabs(dx) < 1e-10) break;
     }
-
     return Py_BuildValue("(dd)", x, 0.0);
 }
 
-// 5. 多体引力合力
 static PyObject* multi_body_gravity(PyObject* self, PyObject* args) {
     PyObject* bodies_list;
     if (!PyArg_ParseTuple(args, "O", &bodies_list)) return NULL;
-
     if (!PyList_Check(bodies_list)) {
         PyErr_SetString(PyExc_TypeError, "Expected a list of bodies");
         return NULL;
     }
-
     Py_ssize_t n = PyList_Size(bodies_list);
     if (n < 2) {
         return Py_BuildValue("(dd)", 0.0, 0.0);
     }
-
     double G = 6.67430e-11;
     double fx = 0.0, fy = 0.0;
-
     for (Py_ssize_t i = 0; i < n; i++) {
         for (Py_ssize_t j = i + 1; j < n; j++) {
             PyObject* body_i = PyList_GetItem(bodies_list, i);
             PyObject* body_j = PyList_GetItem(bodies_list, j);
-
             double mi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 0));
             double xi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 1));
             double yi = PyFloat_AsDouble(PyTuple_GetItem(body_i, 2));
-
             double mj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 0));
             double xj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 1));
             double yj = PyFloat_AsDouble(PyTuple_GetItem(body_j, 2));
-
             double dx = xj - xi;
             double dy = yj - yi;
             double dist2 = dx * dx + dy * dy;
             double dist = sqrt(dist2);
-
             if (dist < 1e-6) continue;
-
             double F = G * mi * mj / dist2;
             fx += F * dx / dist;
             fy += F * dy / dist;
         }
     }
-
     return Py_BuildValue("(dd)", fx, fy);
+}
+
+// ========== 1.5.0 新增：星球参数 ==========
+
+typedef struct {
+    const char* name_cn;
+    const char* name_en;
+    double radius;
+    double mass;
+    double gravity;
+    double escape_velocity;
+    double orbital_period;
+    double rotation_period;
+    double atmosphere_height;
+    double ocean_depth;
+} PlanetInfo;
+
+static const PlanetInfo PLANETS[] = {
+    {"水星", "Mercury", 2439700, 3.301e23, 3.7, 4250, 7600521, 5067000, 0, 0},
+    {"金星", "Venus", 6051800, 4.867e24, 8.87, 10360, 19414146, 20997000, 250000, 0},
+    {"地球", "Earth", 6371000, 5.972e24, 9.8, 11186, 31558149, 86164, 100000, 5000},
+    {"火星", "Mars", 3389500, 6.417e23, 3.71, 5030, 59354294, 88642, 100000, 0},
+    {"木星", "Jupiter", 69911000, 1.898e27, 24.79, 59500, 374335776, 35730, 500000, 0},
+    {"土星", "Saturn", 58232000, 5.683e26, 10.44, 35500, 929596608, 38360, 600000, 0},
+    {"天王星", "Uranus", 25362000, 8.681e25, 8.87, 21300, 2651486400, 62064, 300000, 0},
+    {"海王星", "Neptune", 24622000, 1.024e26, 11.15, 23500, 5197910400, 57996, 300000, 0},
+    {"月球", "Moon", 1737400, 7.342e22, 1.62, 2380, 2360591, 2360591, 0, 0},
+    {"太阳", "Sun", 696340000, 1.989e30, 274, 617700, 0, 2192832, 0, 0},
+};
+
+#define PLANET_COUNT (sizeof(PLANETS) / sizeof(PLANETS[0]))
+
+static PyObject* planet_information(PyObject* self, PyObject* args) {
+    const char* planet_name;
+    if (!PyArg_ParseTuple(args, "s", &planet_name)) return NULL;
+
+    for (size_t i = 0; i < PLANET_COUNT; i++) {
+        if (strcmp(planet_name, PLANETS[i].name_cn) == 0 ||
+            strcmp(planet_name, PLANETS[i].name_en) == 0) {
+            char result[2048];
+            snprintf(result, sizeof(result),
+                "【中文】星球：%s\n"
+                "  半径：%.0f 米\n"
+                "  质量：%.3e 千克\n"
+                "  表面重力：%.2f m/s²\n"
+                "  逃逸速度：%.0f m/s\n"
+                "  公转周期：%.0f 秒\n"
+                "  自转周期：%.0f 秒\n"
+                "  大气层高度：%.0f 米\n"
+                "  海洋深度：%.0f 米\n"
+                "【English】Planet: %s\n"
+                "  Radius: %.0f m\n"
+                "  Mass: %.3e kg\n"
+                "  Surface Gravity: %.2f m/s²\n"
+                "  Escape Velocity: %.0f m/s\n"
+                "  Orbital Period: %.0f s\n"
+                "  Rotation Period: %.0f s\n"
+                "  Atmosphere Height: %.0f m\n"
+                "  Ocean Depth: %.0f m",
+                PLANETS[i].name_cn,
+                PLANETS[i].radius,
+                PLANETS[i].mass,
+                PLANETS[i].gravity,
+                PLANETS[i].escape_velocity,
+                PLANETS[i].orbital_period,
+                PLANETS[i].rotation_period,
+                PLANETS[i].atmosphere_height,
+                PLANETS[i].ocean_depth,
+                PLANETS[i].name_en,
+                PLANETS[i].radius,
+                PLANETS[i].mass,
+                PLANETS[i].gravity,
+                PLANETS[i].escape_velocity,
+                PLANETS[i].orbital_period,
+                PLANETS[i].rotation_period,
+                PLANETS[i].atmosphere_height,
+                PLANETS[i].ocean_depth);
+            return Py_BuildValue("s", result);
+        }
+    }
+
+    PyErr_SetString(PyExc_ValueError,
+        "未知星球！支持：水星、金星、地球、火星、木星、土星、天王星、海王星、月球、太阳\n"
+        "Unknown planet! Supported: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Moon, Sun");
+    return NULL;
 }
 
 // ========== 版本更新信息 ==========
 
 const char* get_update_info(const char* version) {
+    if (strcmp(version, "1.5.0") == 0) {
+        return "【中文】1.5.0 版本：新增 planet_information() / ptmation() 函数，内置 10 个星球参数（水星、金星、地球、火星、木星、土星、天王星、海王星、月球、太阳）。【English】Version 1.5.0: Added planet_information() / ptmation() functions with built-in data for 10 planets (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Moon, Sun).";
+    }
     if (strcmp(version, "1.4.2") == 0) {
-        return "【中文】1.4.2 版本：新增 Python 3.15 兼容。【English】Version 1.4.2: Added with Python 3.15.";
+        return "【中文】1.4.2 版本：新增 Python 3.15 兼容。【English】Version 1.4.2: Added Python 3.15 compatibility.";
     }
     if (strcmp(version, "1.4.1") == 0) {
         return "【中文】1.4.1 版本：新增 macOS Intel、macOS Apple Silicon、Linux aarch64 三个平台的预编译包，全平台制霸。【English】Version 1.4.1: Added prebuilt wheels for macOS Intel, macOS Apple Silicon, and Linux aarch64. Now available on all platforms.";
@@ -345,13 +384,11 @@ const char* get_update_info(const char* version) {
 static PyObject* update_information(PyObject* self, PyObject* args) {
     const char* version;
     if (!PyArg_ParseTuple(args, "s", &version)) return NULL;
-
     const char* info = get_update_info(version);
     if (info == NULL) {
         PyErr_SetString(PyExc_ValueError, "版本号不存在！");
         return NULL;
     }
-
     return Py_BuildValue("s", info);
 }
 
@@ -368,6 +405,8 @@ static PyMethodDef KeplerMethods[] = {
     {"apsis_distances", apsis_distances, METH_VARARGS, "最近/最远点距离"},
     {"lagrange_point", lagrange_point, METH_VARARGS, "拉格朗日点计算（point=1~5）"},
     {"multi_body_gravity", multi_body_gravity, METH_VARARGS, "多体引力合力计算"},
+    {"planet_information", planet_information, METH_VARARGS, "查询星球信息"},
+    {"ptmation", planet_information, METH_VARARGS, "查询星球信息（别名）"},
     {NULL, NULL, 0, NULL}
 };
 
