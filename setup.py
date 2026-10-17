@@ -17,7 +17,7 @@ module = Extension(
 
 setup(
     name='oiiaio-web-kepler',
-    version='1.5.0',
+    version='1.6.0',
     description='轨道计算器 / 轨道力学计算器',
     long_description=open('README.md', encoding='utf-8-sig').read(),
     long_description_content_type='text/markdown',

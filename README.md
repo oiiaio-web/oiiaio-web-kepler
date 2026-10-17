@@ -28,68 +28,189 @@ pip install oiiaio-web-kepler
 
 ---
 
+## 导入 / Import
+
+**中文：**
+安装后，在 Python 中导入并使用，注意是import oiiaio_web_kepler
+
+**English:**
+After installation, import and use in Python,Note: import oiiaio_web_kepler
+
+---
+
 ## 使用方法 / Usage
 
 **中文：**
-安装后，在 Python 中导入并使用：
+安装后，在 Python 中导入并使用。所有物理量均使用国际单位制（SI），每个参数的单位见下方注释。
 
 **English:**
-After installation, import and use in Python:
+After installation, import and use in Python. All quantities use SI units; unit annotations are given in the comments below.
 
-## 使用方法 / Usage
+import oiiaio_web_kepler as k
 
+# ========== 引力 / Gravity ==========
+# 参数：m1(kg), m2(kg), distance(m)
+# 返回：力(N)
+# Parameters: m1(kg), m2(kg), distance(m)
+# Returns: force(N)
+force = k.compute_gravity(5.972e24, 1000, 6371000)
+print(f"引力 / Gravity: {force} N")
+
+
+# ========== 轨道速度 / Orbital velocity ==========
+# 参数：mass(kg) 中心天体质量, radius(m) 轨道半径
+# 返回：速度(m/s)
+# Parameters: mass(kg) central body mass, radius(m) orbital radius
+# Returns: velocity(m/s)
+v = k.orbital_velocity(5.972e24, 6800000)
+print(f"轨道速度 / Orbital velocity: {v} m/s")
+
+
+# ========== 霍曼转移（数字模式）/ Hohmann transfer (numeric) ==========
+# 参数：r1(m) 起始轨道半径, r2(m) 目标轨道半径, mu(m³/s²) 引力常数G*M
+# 返回：(delta_v1, delta_v2, total_delta_v, transfer_time)
+#       delta_v1(m/s), delta_v2(m/s), total_delta_v(m/s), transfer_time(s)
+# Parameters: r1(m), r2(m), mu(m^3/s^2)
+# Returns: (delta_v1(m/s), delta_v2(m/s), total_delta_v(m/s), transfer_time(s))
+result = k.hohmann_transfer(6371000, 42164000, 3.986e14)
+print(f"霍曼转移 / Hohmann transfer: {result}")
+
+
+# ========== 霍曼转移（星球名模式）/ Hohmann transfer (planet names) ==========
+# 参数：星球名（中英文均可）/ planet names (Chinese or English)
+# 以第一颗星球为中心天体，自动查质量算 mu
+# Uses the first planet as central body; mu is computed from its mass
+result = k.hohmann_transfer('Earth', 'Mars')
+print(f"地球→火星 / Earth to Mars: {result}")
+
+result = k.hohmann_transfer('地球', '月球')
+print(f"地球→月球 / Earth to Moon: {result}")
+
+
+# ========== 开普勒第三定律 / Kepler's third law ==========
+# 参数：a1(m), T1(s), a2(m), T2(s)
+# 返回：验证结果字符串(str)
+# Parameters: a1(m), T1(s), a2(m), T2(s)
+# Returns: verification result(str)
+print(k.kepler_third_law(1.0, 1.0, 4.0, 8.0))
+
+
+# ========== 轨道离心率 / Orbital eccentricity ==========
+# 参数：v(m/s) 速度, r(m) 距离, mu(m³/s²) 引力常数
+# 返回：离心率(float，无单位)
+# Parameters: v(m/s), r(m), mu(m^3/s^2)
+# Returns: eccentricity(float, dimensionless)
+e = k.orbital_eccentricity(10000, 7000000, 3.986e14)
+print(f"离心率 / Eccentricity: {e}")
+
+
+# ========== 近远点距离 / Apsis distances ==========
+# 参数：a(m) 半长轴, e(无单位) 离心率
+# 返回：(r_periapsis(m), r_apoapsis(m))
+# Parameters: a(m) semi-major axis, e(dimensionless) eccentricity
+# Returns: (r_periapsis(m), r_apoapsis(m))
+rp, ra = k.apsis_distances(7000000, 0.1)
+print(f"近点 / Periapsis: {rp} m, 远点 / Apoapsis: {ra} m")
+
+
+# ========== 拉格朗日点 / Lagrange point ==========
+# 参数：m1(kg), m2(kg), r(m) 两天体间距, point(int) 1~5
+# 返回：(x(m), y(m))
+# Parameters: m1(kg), m2(kg), r(m), point(int) 1~5
+# Returns: (x(m), y(m))
+x, y = k.lagrange_point(5.972e24, 7.342e22, 3.84e8, 4)
+print(f"L4 位置 / L4 position: ({x} m, {y} m)")
+
+
+# ========== 多体引力 / Multi-body gravity ==========
+# 参数：bodies(list)，元素为 (mass(kg), x(m), y(m))
+# 返回：(fx(N), fy(N))
+# Parameters: bodies(list) of (mass(kg), x(m), y(m))
+# Returns: (fx(N), fy(N))
+bodies = [
+    (5.972e24, 0, 0),      # 地球 / Earth
+    (7.342e22, 3.84e8, 0), # 月球 / Moon
+]
+fx, fy = k.multi_body_gravity(bodies)
+print(f"合力 / Net force: ({fx} N, {fy} N)")
+
+
+# ========== 星球信息 / Planet information ==========
+# 参数：星球名（中英文均可）/ planet name (Chinese or English)
+# 返回：包含半径(m)、质量(kg)、表面重力(m/s²)、逃逸速度(m/s)、
+#       公转周期(s)、自转周期(s)、大气层高度(m)、海洋深度(m)的字符串
+# Returns: a string with radius(m), mass(kg), surface gravity(m/s^2),
+#          escape velocity(m/s), orbital period(s), rotation period(s),
+#          atmosphere height(m), ocean depth(m)
+print(k.planet_information("地球"))
+print(k.ptmation("Mars"))
+
+
+# ========== 版本更新信息 / Version info ==========
+print(k.update_information("1.6.0"))
+
+---
+
+## 支持的星球 / Supported Planets
+
+内置 10 个星球参数，支持中英文名称查询。  
+Built-in data for 10 planets; both Chinese and English names are supported.
+
+| 中文名 | English | 半径 Radius (m) | 质量 Mass (kg) | 表面重力 Gravity (m/s²) | 逃逸速度 Escape Velocity (m/s) |
+|--------|---------|----------------|----------------|------------------------|-------------------------------|
+| 水星 | Mercury | 2,439,700 | 3.301e23 | 3.70 | 4,250 |
+| 金星 | Venus | 6,051,800 | 4.867e24 | 8.87 | 10,360 |
+| 地球 | Earth | 6,371,000 | 5.972e24 | 9.80 | 11,186 |
+| 火星 | Mars | 3,389,500 | 6.417e23 | 3.71 | 5,030 |
+| 木星 | Jupiter | 69,911,000 | 1.898e27 | 24.79 | 59,500 |
+| 土星 | Saturn | 58,232,000 | 5.683e26 | 10.44 | 35,500 |
+| 天王星 | Uranus | 25,362,000 | 8.681e25 | 8.87 | 21,300 |
+| 海王星 | Neptune | 24,622,000 | 1.024e26 | 11.15 | 23,500 |
+| 月球 | Moon | 1,737,400 | 7.342e22 | 1.62 | 2,380 |
+| 太阳 | Sun | 696,340,000 | 1.989e30 | 274.00 | 617,700 |
+
+### 星球参数说明 / Planet Data Fields
+
+| 字段 Field | 单位 Unit | 说明 Description |
+|------------|-----------|------------------|
+| 半径 Radius | 米 m | 星球赤道半径 / equatorial radius |
+| 质量 Mass | 千克 kg | 星球总质量 / total mass |
+| 表面重力 Surface Gravity | m/s² | 星球表面重力加速度 / surface gravitational acceleration |
+| 逃逸速度 Escape Velocity | 米/秒 m/s | 脱离星球引力所需的最小速度 / minimum speed to escape gravity |
+| 公转周期 Orbital Period | 秒 s | 绕太阳公转一周的时间 / time to orbit the Sun (Sun 为 0) |
+| 自转周期 Rotation Period | 秒 s | 自转一周的时间 / self-rotation period |
+| 大气层高度 Atmosphere Height | 米 m | 大气层厚度，0 表示无大气 / atmosphere thickness, 0 = none |
+| 海洋深度 Ocean Depth | 米 m | 海洋深度，0 表示无海洋 / ocean depth, 0 = none |
+
+### 查询示例 / Query Example
 
 ```python
 import oiiaio_web_kepler as k
 
-# 查询星球信息 / Planet information
+# 中文名查询 / Query by Chinese name
 print(k.planet_information("地球"))
-print(k.ptmation("Earth"))
 
-# 计算引力 / Calculate gravity
-force = k.compute_gravity(5.972e24, 1000, 6371000)
-print(f"引力: {force}")
+# 英文名查询 / Query by English name
+print(k.ptmation("Mars"))
 
-# 计算轨道速度 / Calculate orbital velocity
-v = k.orbital_velocity(5.972e24, 6800000)
-print(f"轨道速度: {v}")
+# 支持所有 10 个星球 / All 10 planets are supported
+print(k.ptmation("Sun"))
+print(k.ptmation("月球"))
 
-# 霍曼转移轨道计算 / Hohmann transfer orbit
-dv1, dv2, total_dv, time = k.hohmann_transfer(6371000, 42164000, 3.986e14)
-print(f"第一次点火速度增量: {dv1} m/s")
-print(f"第二次点火速度增量: {dv2} m/s")
-print(f"总速度增量: {total_dv} m/s")
-print(f"转移时间: {time} 秒")
-
-# 开普勒第三定律验证 / Kepler's third law
-result = k.kepler_third_law(1.0, 1.0, 4.0, 8.0)
-print(f"验证结果: {result}")
-
-# 轨道离心率 / Orbital eccentricity
-e = k.orbital_eccentricity(7800, 6800000, 3.986e14)
-print(f"离心率: {e}")
-
-# 最近/最远点距离 / Apsis distances
-r_p, r_a = k.apsis_distances(6800000, 0.01)
-print(f"近地点: {r_p}, 远地点: {r_a}")
-
-# 拉格朗日点 / Lagrange point
-x, y = k.lagrange_point(5.972e24, 7.342e22, 3.84e8, 4)
-print(f"L4 位置: ({x}, {y})")
-
-# 多体引力合力 / Multi-body gravity
-bodies = [(5.972e24, 0, 0), (7.342e22, 3.84e8, 0)]
-fx, fy = k.multi_body_gravity(bodies)
-print(f"合力: ({fx}, {fy})")
-
-# 查询版本更新信息 / Query version update information
-info = k.update_information("1.4.0")
-print(f"更新信息: {info}")
-```
 ---
 
 ## 更新日志 / Changelog
 <details> <summary>点击查看完整的更新日志（Click to expand）</summary>
+
+### [1.6.0] - 2026-10-17
+#### 添加 / Added
+**中文：**
+- hohmann_transfer 支持直接输入星球名称（如 'Earth', 'Mars'），自动查数据库计算星际转移轨道。
+- 所有函数补充中英双语 docstring，help() 可查看参数含义、单位和返回值格式。
+
+**English:**
+- hohmann_transfer now accepts planet names (e.g., 'Earth', 'Mars') and automatically computes interplanetary transfer orbits.
+- Added bilingual (CN/EN) docstrings for all functions; help() now shows parameter meanings, units, and return formats.
 
 ### [1.5.0] - 2026-10-11
 #### 添加 / Added
